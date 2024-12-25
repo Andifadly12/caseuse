@@ -1,39 +1,50 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useCallback } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useFonts } from "expo-font";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+// Peta font Anda
+const fontMap = {
+  SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"), // Pastikan path ini sesuai
+};
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+const RootLayout = () => {
+  // Memuat font menggunakan `useFonts`
+  const [fontsLoaded, fontsError] = useFonts(fontMap);
+
+  // Fungsi untuk menyembunyikan splash screen
+  const hideSplashScreen = useCallback(async () => {
+    if (fontsLoaded || fontsError) {
+      await SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [fontsLoaded, fontsError]);
 
-  if (!loaded) {
+  // Menjalankan efek untuk menyembunyikan splash screen
+  useEffect(() => {
+    hideSplashScreen();
+  }, [hideSplashScreen]);
+
+  // Tampilkan layar kosong jika font belum selesai dimuat dan tidak ada error
+  if (!fontsLoaded && !fontsError) {
     return null;
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <BottomSheetModalProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+        <StatusBar style="dark" />
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
   );
-}
+};
+
+export default RootLayout;
